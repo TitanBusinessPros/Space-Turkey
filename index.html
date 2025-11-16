@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Turkey Runner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #0a0a2a;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .game-container {
+            position: relative;
+            width: 95vw;
+            max-width: 800px;
+            height: 70vh;
+            max-height: 500px;
+            background: #141450;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .score-display, .level-display {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 16px;
+            backdrop-filter: blur(5px);
+        }
+
+        .level-display {
+            background: rgba(120, 40, 200, 0.6);
+        }
+
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(90deg, #0a0a2a, #141450, #0a0a2a);
+            z-index: 1;
+            animation: backgroundScroll 30s linear infinite;
+        }
+
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            background: #2a2a5c;
+            z-index: 3;
+            border-top: 3px solid #3a3a7a;
+        }
+
+        .player {
+            position: absolute;
+            bottom: 80px;
+            left: 100px;
+            width: 70px;
+            height: 70px;
+            z-index: 5;
+            transition: transform 0.3s ease-out;
+        }
+
+        .player img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7));
+        }
+
+        .obstacle {
+            position: absolute;
+            bottom: 80px;
+            width: 60px;
+            height: 60px;
+            z-index: 4;
+        }
+
+        .obstacle img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(255, 65, 108, 0.7));
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 10, 40, 0.9);
+            z-index: 20;
+            backdrop-filter: blur(5px);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #00c6ff, #0072ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 198, 255, 0.5);
+        }
+
+        .subtitle {
+            font-size: 24px;
+            margin-bottom: 40px;
+            color: #a0a0ff;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #6a11cb, #2575fc);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .instructions {
+            max-width: 80%;
+            text-align: center;
+            margin-top: 20px;
+            line-height: 1.6;
+            color: #b0b0ff;
+        }
+
+        .game-over-title {
+            font-size: 60px;
+            color: #ff416c;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 65, 108, 0.7);
+        }
+
+        .final-score {
+            font-size: 36px;
+            margin: 20px 0;
+            color: #00c9ff;
+        }
+
+        .level-up {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 60px;
+            color: #00c9ff;
+            text-shadow: 0 0 20px rgba(0, 201, 255, 0.7);
+            opacity: 0;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .music-control {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 25;
+            backdrop-filter: blur(5px);
+        }
+
+        .music-control i {
+            font-size: 24px;
+            color: #a0a0ff;
+        }
+
+        .mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .mobile-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(106, 17, 203, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes levelUp {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        @keyframes backgroundScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .level-up-animation {
+            animation: levelUp 1.5s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                height: 80vh;
+                max-height: none;
+            }
+            
+            .title {
+                font-size: 36px;
+            }
+            
+            .subtitle {
+                font-size: 18px;
+            }
+            
+            .btn {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+            
+            .mobile-controls {
+                display: flex;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-ui {
+                padding: 10px;
+            }
+            
+            .score-display, .level-display {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+            
+            .mobile-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+            
+            .music-control {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .music-control i {
+                font-size: 18px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="background"></div>
+        <div class="stars" id="stars"></div>
+        
+        <div class="game-ui">
+            <div class="score-display">Score: <span id="score">0</span></div>
+            <div class="level-display">Level: <span id="level">1</span></div>
+        </div>
+        
+        <div class="game-area">
+            <div class="ground"></div>
+            <div class="player" id="player">
+                <img src="https://github.com/TitanBusinessPros/Space-Turkey/raw/main/Space%20Turkey%20Sprite.png" alt="Space Turkey">
+            </div>
+            <div class="level-up" id="level-up">LEVEL UP!</div>
+        </div>
+        
+        <div class="mobile-controls">
+            <div class="mobile-btn" id="jump-btn">
+                <i class="fas fa-arrow-up"></i>
+            </div>
+        </div>
+        
+        <div class="screen" id="start-screen">
+            <h1 class="title">SPACE TURKEY RUNNER</h1>
+            <p class="subtitle">Jump to avoid enemy turkeys!</p>
+            
+            <button class="btn" id="start-btn">START GAME</button>
+            
+            <div class="instructions">
+                <p>Press SPACE, CLICK, or TAP the JUMP button</p>
+                <p>Complete 15 levels to win!</p>
+            </div>
+        </div>
+        
+        <div class="screen hidden" id="game-over-screen">
+            <h1 class="game-over-title">GAME OVER</h1>
+            <div class="final-score">Your Score: <span id="final-score">0</span></div>
+            <div class="final-score">Level Reached: <span id="final-level">1</span></div>
+            <button class="btn" id="restart-btn">PLAY AGAIN</button>
+        </div>
+        
+        <div class="screen hidden" id="win-screen">
+            <h1 class="title">CONGRATULATIONS!</h1>
+            <p class="subtitle">You've completed all 15 levels!</p>
+            <div class="final-score">Final Score: <span id="win-score">0</span></div>
+            <button class="btn" id="win-restart-btn">PLAY AGAIN</button>
+        </div>
+        
+        <div class="music-control" id="music-control">
+            <i class="fas fa-volume-up"></i>
+        </div>
+        
+        <audio id="background-music" loop>
+            <source src="https://github.com/TitanBusinessPros/Space-Turkey/raw/main/Space%20Turkey%20Theme%20Song.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <script>
+        // Game elements
+        const gameContainer = document.querySelector('.game-container');
+        const gameArea = document.querySelector('.game-area');
+        const player = document.getElementById('player');
+        const scoreDisplay = document.getElementById('score');
+        const levelDisplay = document.getElementById('level');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const winScreen = document.getElementById('win-screen');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const winRestartBtn = document.getElementById('win-restart-btn');
+        const finalScore = document.getElementById('final-score');
+        const finalLevel = document.getElementById('final-level');
+        const winScore = document.getElementById('win-score');
+        const levelUp = document.getElementById('level-up');
+        const stars = document.getElementById('stars');
+        const backgroundMusic = document.getElementById('background-music');
+        const musicControl = document.getElementById('music-control');
+        const jumpBtn = document.getElementById('jump-btn');
+
+        // Game variables
+        let gameActive = false;
+        let score = 0;
+        let level = 1;
+        let obstacles = [];
+        let obstacleSpeed = 5;
+        let obstacleSpawnRate = 120;
+        let frameCount = 0;
+        let isJumping = false;
+        let animationId;
+        let obstaclesPassed = 0;
+        let obstaclesPerLevel = 5;
+        let lastObstacleTime = 0;
+        let musicPlaying = false;
+
+        // Create stars for background
+        function createStars() {
+            stars.innerHTML = '';
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.style.width = `${Math.random() * 3}px`;
+                star.style.height = star.style.width;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.opacity = Math.random();
+                stars.appendChild(star);
+            }
+        }
+
+        // Music control
+        musicControl.addEventListener('click', () => {
+            if (musicPlaying) {
+                backgroundMusic.pause();
+                musicControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            } else {
+                backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+                musicControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+            }
+            musicPlaying = !musicPlaying;
+        });
+
+        // Mobile jump button
+        jumpBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        });
+
+        // Start game
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        winRestartBtn.addEventListener('click', startGame);
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            level = 1;
+            obstacles = [];
+            obstacleSpeed = 5;
+            obstacleSpawnRate = 120;
+            frameCount = 0;
+            obstaclesPassed = 0;
+            lastObstacleTime = 0;
+            isJumping = false;
+            
+            scoreDisplay.textContent = score;
+            levelDisplay.textContent = level;
+            
+            // Clear obstacles
+            document.querySelectorAll('.obstacle').forEach(obs => obs.remove());
+            
+            // Hide screens
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            winScreen.classList.add('hidden');
+            
+            // Reset player position
+            player.style.transform = 'translateY(0)';
+            
+            // Create background
+            createStars();
+            
+            // Start background music
+            if (!musicPlaying) {
+                backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+                musicPlaying = true;
+                musicControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+            }
+            
+            // Start game loop
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            gameLoop();
+        }
+
+        // Jump function
+        function jump() {
+            if (!isJumping && gameActive) {
+                isJumping = true;
+                
+                // Jump animation
+                let startTime = null;
+                const jumpHeight = 150;
+                const jumpDuration = 800;
+                
+                function animateJump(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = timestamp - startTime;
+                    
+                    if (progress < jumpDuration / 2) {
+                        // Going up
+                        const jumpProgress = progress / (jumpDuration / 2);
+                        const translateY = -jumpHeight * Math.sin(jumpProgress * Math.PI);
+                        player.style.transform = `translateY(${translateY}px)`;
+                        requestAnimationFrame(animateJump);
+                    } else if (progress < jumpDuration) {
+                        // Coming down
+                        const fallProgress = (progress - jumpDuration / 2) / (jumpDuration / 2);
+                        const translateY = -jumpHeight * Math.sin((1 - fallProgress) * Math.PI);
+                        player.style.transform = `translateY(${translateY}px)`;
+                        requestAnimationFrame(animateJump);
+                    } else {
+                        // Jump complete
+                        player.style.transform = 'translateY(0)';
+                        isJumping = false;
+                    }
+                }
+                
+                requestAnimationFrame(animateJump);
+            }
+        }
+
+        // Event listeners for jump
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameActive) {
+                e.preventDefault();
+                jump();
+            }
+        });
+
+        gameContainer.addEventListener('click', (e) => {
+            if (gameActive && !e.target.closest('.btn') && !e.target.closest('.music-control') && 
+                !e.target.closest('.mobile-btn') && !e.target.closest('.screen')) {
+                jump();
+            }
+        });
+
+        // Create obstacle with turkey sprite
+        function createObstacle() {
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            
+            const obstacleImg = document.createElement('img');
+            obstacleImg.src = 'https://github.com/TitanBusinessPros/Space-Turkey/raw/main/Space%20Turkey%20Sprite-2.png';
+            obstacleImg.alt = 'Enemy Turkey';
+            obstacle.appendChild(obstacleImg);
+            
+            // Start from the right side of the screen
+            obstacle.style.left = `${gameContainer.offsetWidth}px`;
+            gameArea.appendChild(obstacle);
+            
+            obstacles.push({
+                element: obstacle,
+                x: gameContainer.offsetWidth,
+                passed: false
+            });
+        }
+
+        // Update obstacles
+        function updateObstacles() {
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.x -= obstacleSpeed;
+                obs.element.style.left = `${obs.x}px`;
+                
+                // Check if obstacle passed player (player is at 100px from left)
+                if (!obs.passed && obs.x < 100) {
+                    obs.passed = true;
+                    obstaclesPassed++;
+                    score += 10 * level;
+                    scoreDisplay.textContent = score;
+                    
+                    // Check for level up
+                    if (obstaclesPassed >= obstaclesPerLevel) {
+                        levelUpGame();
+                    }
+                }
+                
+                // Check collision
+                if (checkCollision(obs)) {
+                    gameOver();
+                    return;
+                }
+                
+                // Remove obstacle if off screen
+                if (obs.x < -100) {
+                    obs.element.remove();
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        // Simple collision detection
+        function checkCollision(obs) {
+            const playerRect = player.getBoundingClientRect();
+            const obsRect = obs.element.getBoundingClientRect();
+            
+            return (
+                playerRect.left < obsRect.right - 10 &&
+                playerRect.right > obsRect.left + 10 &&
+                playerRect.top < obsRect.bottom - 10 &&
+                playerRect.bottom > obsRect.top + 10
+            );
+        }
+
+        // Level up
+        function levelUpGame() {
+            level++;
+            obstaclesPassed = 0;
+            
+            if (level > 15) {
+                winGame();
+                return;
+            }
+            
+            levelDisplay.textContent = level;
+            obstacleSpeed += 0.5;
+            obstacleSpawnRate = Math.max(80, obstacleSpawnRate - 10);
+            
+            // Show level up animation
+            levelUp.textContent = `LEVEL ${level}`;
+            levelUp.classList.remove('level-up-animation');
+            void levelUp.offsetWidth;
+            levelUp.classList.add('level-up-animation');
+        }
+
+        // Game over
+        function gameOver() {
+            gameActive = false;
+            finalScore.textContent = score;
+            finalLevel.textContent = level;
+            gameOverScreen.classList.remove('hidden');
+            cancelAnimationFrame(animationId);
+        }
+
+        // Win game
+        function winGame() {
+            gameActive = false;
+            winScore.textContent = score;
+            winScreen.classList.remove('hidden');
+            cancelAnimationFrame(animationId);
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (!gameActive) return;
+            
+            frameCount++;
+            
+            // Spawn obstacles at intervals
+            if (frameCount - lastObstacleTime > obstacleSpawnRate) {
+                createObstacle();
+                lastObstacleTime = frameCount;
+            }
+            
+            updateObstacles();
+            
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize game
+        createStars();
+    </script>
+</body>
+</html>
